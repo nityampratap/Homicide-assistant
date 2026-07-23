@@ -17,13 +17,12 @@ def generate_vision_response(user_input, screen_image_path=None):
     try:
         client = Groq(api_key=groq_key)
         
-        # Adding /no_think turns off Qwen's internal reasoning block output
         system_instruction = (
-            "/no_think\n"
-            "You are Homicide, a visual assistant analyzing a live screenshot of the user's monitor.\n\n"
+            "You are Homicide, a visual tactical assistant analyzing a live screenshot of the user's monitor.\n"
+            "DO NOT OUTPUT THINKING PROCESSES OR <think> TAGS. DO NOT END COMMAND TAGS WITH PERIODS.\n\n"
             "STRICT ACTION ROUTING FORMATS:\n"
-            "1. IF USER WANTS TO LAUNCH OR OPEN ANY APP (e.g., 'open Chrome', 'launch Notepad'):\n"
-            "   DO NOT guess pixel coordinates. Reply EXACTLY with: JSON_FALLBACK_LAUNCH:app_name\n"
+            "1. IF USER WANTS TO LAUNCH OR OPEN ANY CLOSED APP (e.g., 'open Chrome', 'launch Notepad'):\n"
+            "   Reply EXACTLY with: JSON_FALLBACK_LAUNCH:app_name\n"
             "   Example: JSON_FALLBACK_LAUNCH:chrome\n\n"
             "2. IF USER WANTS TO SEARCH OR TYPE INSIDE AN OPEN APP BOX (e.g., 'search YouTube here'):\n"
             "   Find the input bar in the image, estimate its center X and Y coordinates, and reply EXACTLY with:\n"
@@ -58,12 +57,17 @@ def generate_vision_response(user_input, screen_image_path=None):
             temperature=0.1
         )
         
-        raw_output = chat_completion.choices[0].message.content
+        raw_output = chat_completion.choices[0].message.content or ""
         
-        # Clean out any leftover <think>...</think> tags dynamically
+        # Remove <think>...</think> blocks
         cleaned_output = re.sub(r'<think>.*?</think>', '', raw_output, flags=re.DOTALL).strip()
         
-        return cleaned_output
+        # Extract JSON tags and strip trailing periods/punctuation
+        json_match = re.search(r'(JSON_[A-Z_]+:[^\n]+)', cleaned_output)
+        if json_match:
+            return json_match.group(1).strip().rstrip('.')
+            
+        return cleaned_output.rstrip('.')
         
     except Exception as e:
         print(f"❌ Groq Vision Brain Error: {e}")

@@ -1,5 +1,6 @@
 import pyautogui
 import time
+import re
 from PIL import ImageGrab
 
 pyautogui.FAILSAFE = True
@@ -26,16 +27,28 @@ def fallback_os_app_launch(app_name):
     return f"Opening {app_name} via system search."
 
 def execute_screen_action(action_type, target_x, target_y, text_to_type=None):
-    """Executes mouse clicks or typing at specific coordinates."""
-    x_coord = int(target_x)
-    y_coord = int(target_y)
+    """Executes mouse clicks or typing at specific coordinates with sanitization."""
     
+    # Clean non-digit characters (like trailing periods '.') from coordinate strings
+    clean_x = re.sub(r'[^\d]', '', str(target_x))
+    clean_y = re.sub(r'[^\d]', '', str(target_y))
+    
+    if not clean_x or not clean_y:
+        return "Error: Invalid coordinate parameters detected."
+        
+    x_coord = int(clean_x)
+    y_coord = int(clean_y)
+    
+    print(f"[OS Executing]: Moving mouse to ({x_coord}, {y_coord}) for action: {action_type}")
     pyautogui.moveTo(x_coord, y_coord, duration=0.4)
     time.sleep(0.1)
     
     if action_type.lower() == "click":
         pyautogui.click()
         return "Target clicked successfully."
+    elif action_type.lower() == "double_click":
+        pyautogui.doubleClick()
+        return "Target double-clicked successfully."
     elif action_type.lower() == "type" and text_to_type:
         pyautogui.click()
         time.sleep(0.2)
