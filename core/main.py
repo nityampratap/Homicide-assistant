@@ -42,7 +42,12 @@ def main():
                     print(f"[Brain Cleaned Output]: {ai_reply}")
 
                     # --- COMMAND ROUTING LAYER ---
-                    if ai_reply.startswith("JSON_FALLBACK_LAUNCH:"):
+                    if ai_reply.startswith("JSON_YOUTUBE_SEARCH:"):
+                        query = ai_reply.replace("JSON_YOUTUBE_SEARCH:", "").strip()
+                        execution_msg = execute_screen_action("youtube_search", 0, 0, text_to_type=query)
+                        speak(execution_msg)
+
+                    elif ai_reply.startswith("JSON_FALLBACK_LAUNCH:"):
                         target_app = ai_reply.replace("JSON_FALLBACK_LAUNCH:", "").strip()
                         execution_msg = fallback_os_app_launch(target_app)
                         speak(execution_msg)

@@ -21,15 +21,18 @@ def generate_vision_response(user_input, screen_image_path=None):
             "You are Homicide, a visual tactical assistant analyzing a live screenshot of the user's monitor.\n"
             "DO NOT OUTPUT THINKING PROCESSES OR <think> TAGS. DO NOT END COMMAND TAGS WITH PERIODS.\n\n"
             "STRICT ACTION ROUTING FORMATS:\n"
-            "1. IF USER WANTS TO LAUNCH OR OPEN ANY CLOSED APP (e.g., 'open Chrome', 'launch Notepad'):\n"
+            "1. IF USER WANTS TO SEARCH ANYTHING ON YOUTUBE (e.g., 'search India's Got Talent on YouTube', 'search lofi music'):\n"
+            "   Reply EXACTLY with: JSON_YOUTUBE_SEARCH:query_text\n"
+            "   Example: JSON_YOUTUBE_SEARCH:India's Got Talent\n\n"
+            "2. IF USER WANTS TO LAUNCH OR OPEN ANY CLOSED APP (e.g., 'open Chrome', 'launch Notepad'):\n"
             "   Reply EXACTLY with: JSON_FALLBACK_LAUNCH:app_name\n"
             "   Example: JSON_FALLBACK_LAUNCH:chrome\n\n"
-            "2. IF USER WANTS TO SEARCH OR TYPE INSIDE AN OPEN APP BOX (e.g., 'search YouTube here'):\n"
-            "   Find the input bar in the image, estimate its center X and Y coordinates, and reply EXACTLY with:\n"
+            "3. IF USER WANTS TO SEARCH OR TYPE INSIDE AN OTHER APP/URL BAR (e.g., 'type www.youtube.com'):\n"
+            "   Find the address bar/input box in the image, estimate center X and Y, and reply EXACTLY with:\n"
             "   JSON_TYPE:X|Y|text_to_search\n\n"
-            "3. IF USER WANTS TO CLICK AN ITEM OR BUTTON ON SCREEN:\n"
-            "   Reply EXACTLY with: JSON_CLICK:X|Y\n\n"
-            "4. For casual conversation, respond with a short text phrase."
+            "4. IF USER WANTS TO CLICK AN ITEM OR VIDEO THUMBNAIL ON SCREEN:\n"
+            "   Estimate its center X and Y coordinates and reply EXACTLY with: JSON_CLICK:X|Y\n\n"
+            "5. For casual conversation, respond with a short text phrase."
         )
 
         messages = [{"role": "system", "content": system_instruction}]
@@ -59,10 +62,8 @@ def generate_vision_response(user_input, screen_image_path=None):
         
         raw_output = chat_completion.choices[0].message.content or ""
         
-        # Remove <think>...</think> blocks
         cleaned_output = re.sub(r'<think>.*?</think>', '', raw_output, flags=re.DOTALL).strip()
         
-        # Extract JSON tags and strip trailing periods/punctuation
         json_match = re.search(r'(JSON_[A-Z_]+:[^\n]+)', cleaned_output)
         if json_match:
             return json_match.group(1).strip().rstrip('.')
